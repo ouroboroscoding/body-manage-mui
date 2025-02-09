@@ -1,5 +1,5 @@
 /**
- * Manage Portals
+ * Manage Portal instances
  *
  * Portals page
  *
@@ -14,8 +14,8 @@ import { useRights } from '@ouroboros/brain-react';
 import { Tree } from '@ouroboros/define'
 import { Form } from '@ouroboros/define-mui';
 import manage from '@ouroboros/manage';
-import PortalDef from '@ouroboros/manage/define/rest.json';
-import { empty, omap, opop, ucfirst } from '@ouroboros/tools';
+import RestDef from '@ouroboros/manage/define/portal.json';
+import { combine, empty, omap, opop } from '@ouroboros/tools';
 
 // NPM modules
 import PropTypes from 'prop-types';
@@ -29,11 +29,34 @@ import Paper from '@mui/material/Paper';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 
-// Generate the rest parent
-const PortalTree = new Tree(PortalDef, { __name__: 'Portals' });
+// Local components
+import Instance from './Instance';
+
+// Generate the portal parent
+const RestTree = new Tree(RestDef, {
+	__name__: 'Portal',
+	__ui__: {
+		__create__: [ 'name', 'path', 'output', 'git', 'node' ],
+		__update__: [ 'path', 'output', 'git', 'node' ]
+	},
+	name: { __type__: "string" },
+	path: { __ui__: { __title__: 'Path to the repository' } },
+	output: { __ui__: { __title__: 'Path to output folder' } },
+	git: {
+		__ui__: { __title__: "Git Options" },
+		checkout: { __ui__: { __title__: 'Allow switching branches?' } },
+		submodules: { __ui__: { __title__: 'Requires submodules?' } }
+	},
+	node: {
+		__ui__: { __title__: "Node options" },
+		force_install: { __ui__: { __title__: '--force on install' } },
+		nvm: { __ui__: { __title__: 'nvm alias (optional)' } }
+	}
+});
 
 // Types
-import { responseErrorStruct } from '@ouroboros/body';
+import type { responseErrorStruct } from '@ouroboros/body';
+import type { InstanceStruct } from './Instance';
 export type PortalsProps = {
 	onError: (error: responseErrorStruct) => void,
 	onSuccess: (type: string) => void
@@ -42,7 +65,7 @@ export type PortalsProps = {
 /**
  * Portals
  *
- * Handles Portals management
+ * Handles Portal instance management
  *
  * @name Portals
  * @access public
@@ -53,7 +76,7 @@ export default function Portals({ onError, onSuccess }: PortalsProps) {
 
 	// State
 	const [ create, createSet ] = useState<boolean>(false);
-	const [ records, recordsSet ] = useState<Record<string, any>>({});
+	const [ records, recordsSet ] = useState<Record<string, InstanceStruct>>({});
 
 	// Hooks
 	const rights = useRights('manage_portal');
@@ -63,7 +86,7 @@ export default function Portals({ onError, onSuccess }: PortalsProps) {
 
 		// If we have read rights
 		if(rights.read) {
-			manage.read('rest').then(recordsSet);
+			manage.read('portals').then(recordsSet);
 		} else {
 			recordsSet({});
 		}
@@ -76,13 +99,24 @@ export default function Portals({ onError, onSuccess }: PortalsProps) {
 	}, [ rights ]);
 
 	// Called when a create form is submitted
-	function createSubmit(rest: any): Promise<boolean> {
+	function createSubmit(portal: any): Promise<boolean> {
+
+		// Pull off the name
+		const sName = opop(portal, 'name');
 
 		// Create a new Promise and return it
 		return new Promise((resolve, reject) => {
 
-			// Create the new rest
-			manage.create('rest', rest).then((data: string) => {
+			// If it already exists
+			if(sName in records) {
+				return reject([ [ 'name', 'Already in use' ] ]);
+			}
+
+			// Create the new portal
+			manage.create('portal', {
+				name: sName,
+				record: portal
+			}).then((data: string) => {
 
 				// If we were successful
 				if(data) {
@@ -90,16 +124,13 @@ export default function Portals({ onError, onSuccess }: PortalsProps) {
 					// Notify the parent
 					onSuccess('create');
 
-					// Pop off the name
-					const sName = opop(rest, 'name');
-
 					// Close the create form
 					createSet(false);
 
 					// Clone the records, add the new one, and set the new
 					//	records
 					const oRecords = { ...records };
-					oRecords[sName] = rest;
+					oRecords[sName] = portal;
 					recordsSet(oRecords);
 				}
 
@@ -122,86 +153,31 @@ export default function Portals({ onError, onSuccess }: PortalsProps) {
 		});
 	}
 
-	// Called when the delete button on a rest was clicked
-	function deleteClick(key: string) {
+	// Called when a Portal instance has been deleted
+	function instanceDeleted(name: string) {
 
-		// Delete the existing rest
-		manage.delete('rest', { name: key }).then((data: boolean) => {
-
-			// If it was successful
-			if(data) {
-
-				// Notify the parent
-				onSuccess('delete');
-
-				// Remove the entry and store the new records
-				recordsSet(o => {
-					if(key in o) {
-						const oNew = { ...o };
-						delete oNew[key];
-						return oNew;
-					} else {
-						return o;
-					}
-				});
-			}
-		}, (error: responseErrorStruct) => {
-			if(onError) {
-				onError(error);
+		// Get latest
+		recordsSet(o => {
+			if(name in o) {
+				const oNew = { ...o };
+				delete oNew[name];
+				return oNew;
 			} else {
-				throw new Error(JSON.stringify(error));
+				return o;
 			}
 		});
 	}
 
-	// Called when an update form is submitted
-	function updateSubmit(rest: any, key: string): Promise<boolean> {
-
-		// Create a new Promise and return it
-		return new Promise((resolve, reject) => {
-
-			// Update the rest on the server
-			manage.update('rest', { name: key, ...rest }).then((data: boolean) => {
-
-				// If we were successful
-				if(data) {
-
-					// Notify the parent
-					onSuccess('update');
-
-					recordsSet(o => {
-						if(key in o) {
-							const oNew = { ...o };
-							oNew[key] = rest;
-							return oNew;
-						} else {
-							return o;
-						}
-					});
-				}
-
-				// Resolve with the Form
-				resolve(data);
-
-			}, (error: responseErrorStruct) => {
-				if(error.code === errors.DATA_FIELDS) {
-					reject(error.msg);
-				} else {
-					if(onError) {
-						onError(error);
-					} else {
-						throw new Error(JSON.stringify(error));
-					}
-				}
-			});
-		});
+	// Called when a Portal instance has been updated
+	function instanceUpdated(name: string, portal: InstanceStruct) {
+		recordsSet(o => combine(o, { [name]: portal }));
 	}
 
 	// Render
 	return (
-		<Box id="manage_portals" className="flexGrow padding">
+		<Box id="manage_portal" className="flexGrow padding">
 			<Box className="flexColumns">
-				<h1 className="flexGrow">Portal</h1>
+				<h1 className="flexGrow">Portals</h1>
 				{rights.create &&
 					<Box className="flexStatic">
 						<Tooltip title="Create new Portal" className="page_action" onClick={() => createSet(b => !b)}>
@@ -215,26 +191,32 @@ export default function Portals({ onError, onSuccess }: PortalsProps) {
 			{create &&
 				<Paper className="padding">
 					<Form
+						gridSizes={{ __default__: { xs:12 }}}
 						onCancel={() => createSet(false)}
 						onSubmit={createSubmit}
-						tree={PortalTree}
+						title="Create Instance"
+						tree={RestTree}
 						type="create"
 					/>
 				</Paper>
 			}
 			{!empty(records) ? (
 				<Grid container>
-					{omap(records, (v, k) =>
-						<Grid item key={k} xs={12} sm={2} md={3} lg={4} xl={5}>
-							<Paper className="padding">
-								<h2>{ucfirst(k)}</h2>
-								<pre>{JSON.stringify(v, null, 4)}</pre>
-							</Paper>
-						</Grid>
+					{omap(records, (o, k) =>
+						<Instance
+							key={k}
+							name={k}
+							onError={onError}
+							onDeleted={instanceDeleted}
+							onUpdated={instanceUpdated}
+							record={o}
+							rights={rights}
+							tree={RestTree}
+						/>
 					)}
 				</Grid>
 			) : (
-				<Typography>No REST instances found.</Typography>
+				<Typography>No Portal instances found.</Typography>
 			)}
 		</Box>
 	);

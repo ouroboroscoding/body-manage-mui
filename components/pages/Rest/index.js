@@ -14,7 +14,7 @@ import { Tree } from '@ouroboros/define';
 import { DefineHash, Form } from '@ouroboros/define-mui';
 import manage from '@ouroboros/manage';
 import RestDef from '@ouroboros/manage/define/rest.json';
-import { empty, omap, opop } from '@ouroboros/tools';
+import { combine, empty, omap, opop } from '@ouroboros/tools';
 // NPM modules
 import PropTypes from 'prop-types';
 import React, { useEffect, useState } from 'react';
@@ -33,7 +33,8 @@ DefineHash.pluginAdd('restServices', Services);
 const RestTree = new Tree(RestDef, {
     __name__: 'REST',
     __ui__: {
-        __create__: ['name', 'path', 'git', 'python', 'services']
+        __create__: ['name', 'path', 'git', 'python', 'services'],
+        __update__: ['path', 'git', 'python', 'services']
     },
     name: { __type__: "string" },
     path: { __ui__: { __title__: 'Path to the repository' } },
@@ -144,10 +145,7 @@ export default function Rest({ onError, onSuccess }) {
     }
     // Called when a REST instance has been updated
     function instanceUpdated(name, rest) {
-        // Get latest
-        recordsSet(o => {
-            return { ...o, [name]: rest };
-        });
+        recordsSet(o => combine(o, { [name]: rest }));
     }
     // Render
     return (React.createElement(Box, { id: "manage_rest", className: "flexGrow padding" },
@@ -161,7 +159,7 @@ export default function Rest({ onError, onSuccess }) {
         create &&
             React.createElement(Paper, { className: "padding" },
                 React.createElement(Form, { gridSizes: { __default__: { xs: 12 } }, onCancel: () => createSet(false), onSubmit: createSubmit, title: "Create Instance", tree: RestTree, type: "create" })),
-        !empty(records) ? (React.createElement(Grid, { container: true }, omap(records, (o, k) => React.createElement(Instance, { key: k, name: k, onError: onError, onDeleted: instanceDeleted, onUpdated: instanceUpdated, record: o, rights: rights })))) : (React.createElement(Typography, null, "No REST instances found."))));
+        !empty(records) ? (React.createElement(Grid, { container: true }, omap(records, (o, k) => React.createElement(Instance, { key: k, name: k, onError: onError, onDeleted: instanceDeleted, onUpdated: instanceUpdated, record: o, rights: rights, tree: RestTree })))) : (React.createElement(Typography, null, "No REST instances found."))));
 }
 // Valid props
 Rest.propTypes = {

@@ -1,5 +1,5 @@
 /**
- * Manage Portals
+ * Manage Portal instances
  *
  * Portals page
  *
@@ -9,7 +9,7 @@
  */
 import PropTypes from 'prop-types';
 import React from 'react';
-import { responseErrorStruct } from '@ouroboros/body';
+import type { responseErrorStruct } from '@ouroboros/body';
 export type PortalsProps = {
     onError: (error: responseErrorStruct) => void;
     onSuccess: (type: string) => void;
@@ -17,7 +17,7 @@ export type PortalsProps = {
 /**
  * Portals
  *
- * Handles Portals management
+ * Handles Portal instance management
  *
  * @name Portals
  * @access public

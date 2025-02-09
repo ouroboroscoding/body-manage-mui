@@ -1,7 +1,7 @@
 /**
- * Manage REST instance
+ * Manage Portal instance
  *
- * REST Instance component
+ * Portal Instance component
  *
  * @author Chris Nasr <chris@ouroboroscoding.com>
  * @copyright Ouroboros Coding Inc.
@@ -31,7 +31,7 @@ import Typography from '@mui/material/Typography';
 /**
  * Instance
  *
- * Handles REST instance management
+ * Handles Portal instance management
  *
  * @name Instance
  * @access public
@@ -63,20 +63,20 @@ export default function Instance({ name, onDeleted, onError, onUpdated, record, 
         });
     }
     // Called when an update form is submitted
-    function updateSubmit(rest) {
+    function updateSubmit(portal) {
         // Create a new Promise and return it
         return new Promise((resolve, reject) => {
-            // Update the rest on the server
-            manage.update('rest', {
+            // Update the portal on the server
+            manage.update('portal', {
                 name,
-                record: rest
+                record: portal
             }).then((data) => {
                 // If we were successful
                 if (data) {
                     // Hide the update mode
                     updateSet(false);
                     // Notify the parent
-                    onUpdated(name, rest);
+                    onUpdated(name, portal);
                 }
                 // Resolve with the Form
                 resolve(data);
@@ -103,11 +103,11 @@ export default function Instance({ name, onDeleted, onError, onUpdated, record, 
                     React.createElement("h2", { className: "flexGrow" }, ucfirst(name)),
                     React.createElement(Box, { className: "flexStatic" },
                         rights.update &&
-                            React.createElement(Tooltip, { title: "Updated REST instance", className: "page_action", onClick: () => updateSet(b => !b) },
+                            React.createElement(Tooltip, { title: "Updated Portal instance", className: "page_action", onClick: () => updateSet(b => !b) },
                                 React.createElement(IconButton, null,
                                     React.createElement("i", { className: 'fa-solid fa-edit' + (update ? ' open' : '') }))),
                         rights.delete &&
-                            React.createElement(Tooltip, { title: "Remove REST instance", className: "page_action", onClick: () => removeSet(b => !b) },
+                            React.createElement(Tooltip, { title: "Remove Portal instance", className: "page_action", onClick: () => removeSet(b => !b) },
                                 React.createElement(IconButton, null,
                                     React.createElement("i", { className: "fa-solid fa-trash-alt" }))))),
                 update ? (React.createElement(Form, { gridSizes: { __default__: { xs: 12 } }, onCancel: () => updateSet(false), onSubmit: updateSubmit, tree: tree, type: "update", value: record })) : (React.createElement(Grid, { container: true, spacing: 1 },
@@ -115,20 +115,20 @@ export default function Instance({ name, onDeleted, onError, onUpdated, record, 
                         React.createElement("b", null, "Path")),
                     React.createElement(Grid, { item: true, xs: 12, sm: 8 }, record.path),
                     React.createElement(Grid, { item: true, xs: 12, sm: 4 },
+                        React.createElement("b", null, "Output")),
+                    React.createElement(Grid, { item: true, xs: 12, sm: 8 }, record.output),
+                    React.createElement(Grid, { item: true, xs: 12, sm: 4 },
                         React.createElement("b", null, "Git checkout")),
                     React.createElement(Grid, { item: true, xs: 12, sm: 8 }, record.git && record.git.checkout ? 'true' : 'false'),
                     React.createElement(Grid, { item: true, xs: 12, sm: 4 },
                         React.createElement("b", null, "Git submodules")),
                     React.createElement(Grid, { item: true, xs: 12, sm: 8 }, record.git && record.git.checkout ? 'true' : 'false'),
                     React.createElement(Grid, { item: true, xs: 12, sm: 4 },
-                        React.createElement("b", null, "Python path")),
-                    React.createElement(Grid, { item: true, xs: 12, sm: 8 }, (record.python && record.python.which) || ' '),
+                        React.createElement("b", null, "Node - Force Install")),
+                    React.createElement(Grid, { item: true, xs: 12, sm: 8 }, record.node && record.node.force_install ? 'true' : 'false'),
                     React.createElement(Grid, { item: true, xs: 12, sm: 4 },
-                        React.createElement("b", null, "Python requirements")),
-                    React.createElement(Grid, { item: true, xs: 12, sm: 8 }, (record.python && record.python.requirements) || ' '),
-                    React.createElement(Grid, { item: true, xs: 12, sm: 4 },
-                        React.createElement("b", null, "Services")),
-                    React.createElement(Grid, { item: true, xs: 12, sm: 8 }, Object.keys(record.services).join(', ')))))),
+                        React.createElement("b", null, "Node - nvm")),
+                    React.createElement(Grid, { item: true, xs: 12, sm: 8 }, (record.node && record.node.nvm) || ' '))))),
         remove &&
             React.createElement(Dialog, { onClose: () => removeSet(false), open: true },
                 React.createElement(DialogTitle, null, "Confirm Delete"),

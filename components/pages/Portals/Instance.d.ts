@@ -1,7 +1,7 @@
 /**
- * Manage REST instance
+ * Manage Portal instance
  *
- * REST Instance component
+ * Portal Instance component
  *
  * @author Chris Nasr <chris@ouroboroscoding.com>
  * @copyright Ouroboros Coding Inc.
@@ -12,18 +12,17 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import type { responseErrorStruct } from '@ouroboros/body';
 import type { idStruct } from '@ouroboros/brain-react';
-import type { ServicesStruct } from './Services';
 export type InstanceStruct = {
-    path: string;
     git?: {
         checkout?: boolean;
         submodule?: boolean;
     };
-    python?: {
-        which?: string;
-        requirements?: string;
+    node?: {
+        force_install?: string;
+        nvm?: string;
     };
-    services: ServicesStruct;
+    output: string;
+    path: string;
 };
 export type InstanceProps = {
     name: string;
@@ -39,7 +38,7 @@ export type onUpdatedCallback = (name: string, rest: InstanceStruct) => void;
 /**
  * Instance
  *
- * Handles REST instance management
+ * Handles Portal instance management
  *
  * @name Instance
  * @access public

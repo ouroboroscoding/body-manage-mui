@@ -15,7 +15,7 @@ import { Tree } from '@ouroboros/define'
 import { DefineHash, Form } from '@ouroboros/define-mui';
 import manage from '@ouroboros/manage';
 import RestDef from '@ouroboros/manage/define/rest.json';
-import { empty, omap, opop } from '@ouroboros/tools';
+import { combine, empty, omap, opop } from '@ouroboros/tools';
 
 // NPM modules
 import PropTypes from 'prop-types';
@@ -38,7 +38,8 @@ DefineHash.pluginAdd('restServices', Services);
 const RestTree = new Tree(RestDef, {
 	__name__: 'REST',
 	__ui__: {
-		__create__: [ 'name', 'path', 'git', 'python', 'services' ]
+		__create__: [ 'name', 'path', 'git', 'python', 'services' ],
+		__update__: [ 'path', 'git', 'python', 'services' ]
 	},
 	name: { __type__: "string" },
 	path: { __ui__: { __title__: 'Path to the repository' } },
@@ -173,11 +174,7 @@ export default function Rest({ onError, onSuccess }: RestProps) {
 
 	// Called when a REST instance has been updated
 	function instanceUpdated(name: string, rest: InstanceStruct) {
-
-		// Get latest
-		recordsSet(o => {
-			return { ...o, [name]: rest }
-		});
+		recordsSet(o => combine(o, { [name]: rest }));
 	}
 
 	// Render
@@ -218,6 +215,7 @@ export default function Rest({ onError, onSuccess }: RestProps) {
 							onUpdated={instanceUpdated}
 							record={o}
 							rights={rights}
+							tree={RestTree}
 						/>
 					)}
 				</Grid>

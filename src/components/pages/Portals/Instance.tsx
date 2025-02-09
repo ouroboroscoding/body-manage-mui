@@ -1,7 +1,7 @@
 /**
- * Manage REST instance
+ * Manage Portal instance
  *
- * REST Instance component
+ * Portal Instance component
  *
  * @author Chris Nasr <chris@ouroboroscoding.com>
  * @copyright Ouroboros Coding Inc.
@@ -35,18 +35,17 @@ import Typography from '@mui/material/Typography';
 // Types
 import type { responseErrorStruct } from '@ouroboros/body';
 import type { idStruct } from '@ouroboros/brain-react';
-import type { ServicesStruct } from './Services';
 export type InstanceStruct = {
-	path: string,
 	git?: {
 		checkout?: boolean,
 		submodule?: boolean
 	},
-	python?: {
-		which?: string,
-		requirements?: string
+	node?: {
+		force_install?: string,
+		nvm?: string
 	},
-	services: ServicesStruct
+	output: string,
+	path: string
 }
 export type InstanceProps = {
 	name: string,
@@ -63,7 +62,7 @@ export type onUpdatedCallback = (name: string, rest: InstanceStruct) => void
 /**
  * Instance
  *
- * Handles REST instance management
+ * Handles Portal instance management
  *
  * @name Instance
  * @access public
@@ -103,15 +102,15 @@ export default function Instance({
 	}
 
 	// Called when an update form is submitted
-	function updateSubmit(rest: any): Promise<boolean> {
+	function updateSubmit(portal: any): Promise<boolean> {
 
 		// Create a new Promise and return it
 		return new Promise((resolve, reject) => {
 
-			// Update the rest on the server
-			manage.update('rest', {
+			// Update the portal on the server
+			manage.update('portal', {
 				name,
-				record: rest
+				record: portal
 			}).then((data: boolean) => {
 
 				// If we were successful
@@ -121,7 +120,7 @@ export default function Instance({
 					updateSet(false);
 
 					// Notify the parent
-					onUpdated(name, rest);
+					onUpdated(name, portal);
 				}
 
 				// Resolve with the Form
@@ -149,14 +148,14 @@ export default function Instance({
 					<h2 className="flexGrow">{ucfirst(name)}</h2>
 					<Box className="flexStatic">
 						{rights.update &&
-							<Tooltip title="Updated REST instance" className="page_action" onClick={() => updateSet(b => !b)}>
+							<Tooltip title="Updated Portal instance" className="page_action" onClick={() => updateSet(b => !b)}>
 								<IconButton>
 									<i className={'fa-solid fa-edit' + (update ? ' open' : '')} />
 								</IconButton>
 							</Tooltip>
 						}
 						{rights.delete &&
-							<Tooltip title="Remove REST instance" className="page_action" onClick={() => removeSet(b => !b)}>
+							<Tooltip title="Remove Portal instance" className="page_action" onClick={() => removeSet(b => !b)}>
 								<IconButton>
 									<i className="fa-solid fa-trash-alt" />
 								</IconButton>
@@ -182,6 +181,12 @@ export default function Instance({
 							{record.path}
 						</Grid>
 						<Grid item xs={12} sm={4}>
+							<b>Output</b>
+						</Grid>
+						<Grid item xs={12} sm={8}>
+							{record.output}
+						</Grid>
+						<Grid item xs={12} sm={4}>
 							<b>Git checkout</b>
 						</Grid>
 						<Grid item xs={12} sm={8}>
@@ -194,22 +199,16 @@ export default function Instance({
 							{record.git && record.git.checkout ? 'true' : 'false'}
 						</Grid>
 						<Grid item xs={12} sm={4}>
-							<b>Python path</b>
+							<b>Node - Force Install</b>
 						</Grid>
 						<Grid item xs={12} sm={8}>
-							{(record.python && record.python.which) || ' '}
+							{record.node && record.node.force_install ? 'true' : 'false'}
 						</Grid>
 						<Grid item xs={12} sm={4}>
-							<b>Python requirements</b>
+							<b>Node - nvm</b>
 						</Grid>
 						<Grid item xs={12} sm={8}>
-							{(record.python && record.python.requirements) || ' '}
-						</Grid>
-						<Grid item xs={12} sm={4}>
-							<b>Services</b>
-						</Grid>
-						<Grid item xs={12} sm={8}>
-							{Object.keys(record.services).join(', ')}
+							{(record.node && record.node.nvm) || ' '}
 						</Grid>
 					</Grid>
 				)}
