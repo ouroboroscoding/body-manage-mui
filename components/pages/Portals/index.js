@@ -14,7 +14,7 @@ import { Tree } from '@ouroboros/define';
 import { Form } from '@ouroboros/define-mui';
 import manage from '@ouroboros/manage';
 import RestDef from '@ouroboros/manage/define/portal.json';
-import { combine, empty, omap, opop } from '@ouroboros/tools';
+import { combine, empty, omap, opop, pathToTree } from '@ouroboros/tools';
 // NPM modules
 import PropTypes from 'prop-types';
 import React, { useEffect, useState } from 'react';
@@ -31,8 +31,8 @@ import Instance from './Instance';
 const RestTree = new Tree(RestDef, {
     __name__: 'Portal',
     __ui__: {
-        __create__: ['name', 'path', 'output', 'git', 'node'],
-        __update__: ['path', 'output', 'git', 'node']
+        __create__: ['name', 'path', 'output', 'backups', 'git', 'node'],
+        __update__: ['path', 'output', 'backups', 'git', 'node']
     },
     name: { __type__: "string" },
     path: { __ui__: { __title__: 'Path to the repository' } },
@@ -45,7 +45,8 @@ const RestTree = new Tree(RestDef, {
     node: {
         __ui__: { __title__: "Node options" },
         force_install: { __ui__: { __title__: '--force on install' } },
-        nvm: { __ui__: { __title__: 'nvm alias (optional)' } }
+        nvm: { __ui__: { __title__: 'nvm alias (optional)' } },
+        script: { __ui__: { __title__: 'npm run script' } }
     }
 });
 /**
@@ -64,6 +65,7 @@ export default function Portals({ onError, onSuccess }) {
     const [records, recordsSet] = useState({});
     // Hooks
     const rights = useRights('manage_portal');
+    const rbuild = useRights('manage_portal_build');
     // User / archived change effect
     useEffect(() => {
         // If we have read rights
@@ -112,7 +114,7 @@ export default function Portals({ onError, onSuccess }) {
                     reject([['name', 'Already in use']]);
                 }
                 else if (error.code === errors.DATA_FIELDS) {
-                    reject(error.msg);
+                    reject(pathToTree(error.msg).record);
                 }
                 else {
                     if (onError) {
@@ -154,8 +156,16 @@ export default function Portals({ onError, onSuccess }) {
                             React.createElement("i", { className: 'fa-solid fa-plus' + (create ? ' open' : '') }))))),
         create &&
             React.createElement(Paper, { className: "padding" },
-                React.createElement(Form, { gridSizes: { __default__: { xs: 12 } }, onCancel: () => createSet(false), onSubmit: createSubmit, title: "Create Instance", tree: RestTree, type: "create" })),
-        !empty(records) ? (React.createElement(Grid, { container: true }, omap(records, (o, k) => React.createElement(Instance, { key: k, name: k, onError: onError, onDeleted: instanceDeleted, onUpdated: instanceUpdated, record: o, rights: rights, tree: RestTree })))) : (React.createElement(Typography, null, "No Portal instances found."))));
+                React.createElement(Form, { gridSizes: { __default__: { xs: 12 } }, onCancel: () => createSet(false), onSubmit: createSubmit, title: "Create Instance", tree: RestTree, type: "create", value: {
+                        path: '',
+                        output: '',
+                        git: { checkout: false, submodules: false },
+                        node: { force_install: false, nvm: '' }
+                    } })),
+        !empty(records) ? (React.createElement(Grid, { container: true, spacing: 2 }, omap(records, (o, k) => React.createElement(Instance, { key: k, name: k, onError: onError, onDeleted: instanceDeleted, onUpdated: instanceUpdated, record: o, rights: {
+                main: rights,
+                build: rbuild
+            }, tree: RestTree })))) : (React.createElement(Typography, null, "No Portal instances found."))));
 }
 // Valid props
 Portals.propTypes = {

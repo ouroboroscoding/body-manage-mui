@@ -10,12 +10,12 @@
 
 // Ouroboros modules
 import { errors } from '@ouroboros/body';
-import { useRights } from '@ouroboros/brain-react';
+import { idStruct, useRights } from '@ouroboros/brain-react';
 import { Tree } from '@ouroboros/define'
 import { Form } from '@ouroboros/define-mui';
 import manage from '@ouroboros/manage';
 import RestDef from '@ouroboros/manage/define/portal.json';
-import { combine, empty, omap, opop } from '@ouroboros/tools';
+import { combine, empty, omap, opop, pathToTree } from '@ouroboros/tools';
 
 // NPM modules
 import PropTypes from 'prop-types';
@@ -36,8 +36,8 @@ import Instance from './Instance';
 const RestTree = new Tree(RestDef, {
 	__name__: 'Portal',
 	__ui__: {
-		__create__: [ 'name', 'path', 'output', 'git', 'node' ],
-		__update__: [ 'path', 'output', 'git', 'node' ]
+		__create__: [ 'name', 'path', 'output', 'backups', 'git', 'node' ],
+		__update__: [ 'path', 'output', 'backups', 'git', 'node' ]
 	},
 	name: { __type__: "string" },
 	path: { __ui__: { __title__: 'Path to the repository' } },
@@ -50,7 +50,8 @@ const RestTree = new Tree(RestDef, {
 	node: {
 		__ui__: { __title__: "Node options" },
 		force_install: { __ui__: { __title__: '--force on install' } },
-		nvm: { __ui__: { __title__: 'nvm alias (optional)' } }
+		nvm: { __ui__: { __title__: 'nvm alias (optional)' } },
+		script: { __ui__: { __title__: 'npm run script' } }
 	}
 });
 
@@ -61,6 +62,7 @@ export type PortalsProps = {
 	onError: (error: responseErrorStruct) => void,
 	onSuccess: (type: string) => void
 }
+type buildRights = idStruct & { build?: boolean }
 
 /**
  * Portals
@@ -80,6 +82,7 @@ export default function Portals({ onError, onSuccess }: PortalsProps) {
 
 	// Hooks
 	const rights = useRights('manage_portal');
+	const rbuild = useRights('manage_portal_build');
 
 	// User / archived change effect
 	useEffect(() => {
@@ -141,7 +144,7 @@ export default function Portals({ onError, onSuccess }: PortalsProps) {
 				if(error.code === errors.DB_DUPLICATE) {
 					reject([ [ 'name', 'Already in use' ] ]);
 				} else if(error.code === errors.DATA_FIELDS) {
-					reject(error.msg);
+					reject(pathToTree(error.msg).record);
 				} else {
 					if(onError) {
 						onError(error);
@@ -197,11 +200,17 @@ export default function Portals({ onError, onSuccess }: PortalsProps) {
 						title="Create Instance"
 						tree={RestTree}
 						type="create"
+						value={{
+							path: '',
+							output: '',
+							git: { checkout: false, submodules: false },
+							node: { force_install: false, nvm: '' }
+						}}
 					/>
 				</Paper>
 			}
 			{!empty(records) ? (
-				<Grid container>
+				<Grid container spacing={2}>
 					{omap(records, (o, k) =>
 						<Instance
 							key={k}
@@ -210,7 +219,10 @@ export default function Portals({ onError, onSuccess }: PortalsProps) {
 							onDeleted={instanceDeleted}
 							onUpdated={instanceUpdated}
 							record={o}
-							rights={rights}
+							rights={{
+								main: rights,
+								build: rbuild
+							}}
 							tree={RestTree}
 						/>
 					)}

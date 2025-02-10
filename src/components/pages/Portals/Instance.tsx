@@ -13,7 +13,7 @@ import { errors } from '@ouroboros/body';
 import { Tree } from '@ouroboros/define'
 import { Form } from '@ouroboros/define-mui';
 import manage from '@ouroboros/manage';
-import { ucfirst } from '@ouroboros/tools';
+import { pathToTree, ucfirst } from '@ouroboros/tools';
 
 // NPM modules
 import PropTypes from 'prop-types';
@@ -32,17 +32,22 @@ import Paper from '@mui/material/Paper';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 
+// Local components
+import Build from './Build';
+
 // Types
 import type { responseErrorStruct } from '@ouroboros/body';
 import type { idStruct } from '@ouroboros/brain-react';
 export type InstanceStruct = {
-	git?: {
-		checkout?: boolean,
-		submodule?: boolean
+	backups?: string,
+	git: {
+		checkout: boolean,
+		submodules: boolean
 	},
-	node?: {
-		force_install?: string,
-		nvm?: string
+	node: {
+		force_install: string,
+		nvm?: string,
+		script?: string
 	},
 	output: string,
 	path: string
@@ -53,7 +58,10 @@ export type InstanceProps = {
 	onError: (error: responseErrorStruct) => void,
 	onUpdated: onUpdatedCallback,
 	record: InstanceStruct,
-	rights: idStruct,
+	rights: {
+		main: idStruct
+		build: idStruct
+	},
 	tree: Tree
 }
 export type onDeletedCallback = (name: string) => void;
@@ -74,6 +82,7 @@ export default function Instance({
 }: InstanceProps) {
 
 	// State
+	const [ build, buildSet ] = useState<boolean>(false);
 	const [ remove, removeSet ] = useState<boolean>(false);
 	const [ update, updateSet ] = useState<boolean>(false);
 
@@ -81,7 +90,7 @@ export default function Instance({
 	function deleteClick() {
 
 		// Delete the existing rest
-		manage.delete('rest', { name }).then((data: boolean) => {
+		manage.delete('portal', { name }).then((data: boolean) => {
 
 			// If it was successful
 			if(data) {
@@ -128,7 +137,7 @@ export default function Instance({
 
 			}, (error: responseErrorStruct) => {
 				if(error.code === errors.DATA_FIELDS) {
-					reject(error.msg);
+					reject(pathToTree(error.msg).record);
 				} else {
 					if(onError) {
 						onError(error);
@@ -147,14 +156,14 @@ export default function Instance({
 				<Box className="flexColumns">
 					<h2 className="flexGrow">{ucfirst(name)}</h2>
 					<Box className="flexStatic">
-						{rights.update &&
+						{rights.main.update &&
 							<Tooltip title="Updated Portal instance" className="page_action" onClick={() => updateSet(b => !b)}>
 								<IconButton>
 									<i className={'fa-solid fa-edit' + (update ? ' open' : '')} />
 								</IconButton>
 							</Tooltip>
 						}
-						{rights.delete &&
+						{rights.main.delete &&
 							<Tooltip title="Remove Portal instance" className="page_action" onClick={() => removeSet(b => !b)}>
 								<IconButton>
 									<i className="fa-solid fa-trash-alt" />
@@ -172,7 +181,7 @@ export default function Instance({
 						type="update"
 						value={record}
 					/>
-				) : (
+				) : (<>
 					<Grid container spacing={1}>
 						<Grid item xs={12} sm={4}>
 							<b>Path</b>
@@ -186,34 +195,67 @@ export default function Instance({
 						<Grid item xs={12} sm={8}>
 							{record.output}
 						</Grid>
-						<Grid item xs={12} sm={4}>
-							<b>Git checkout</b>
-						</Grid>
-						<Grid item xs={12} sm={8}>
-							{record.git && record.git.checkout ? 'true' : 'false'}
-						</Grid>
-						<Grid item xs={12} sm={4}>
-							<b>Git submodules</b>
-						</Grid>
-						<Grid item xs={12} sm={8}>
-							{record.git && record.git.checkout ? 'true' : 'false'}
-						</Grid>
-						<Grid item xs={12} sm={4}>
-							<b>Node - Force Install</b>
-						</Grid>
-						<Grid item xs={12} sm={8}>
-							{record.node && record.node.force_install ? 'true' : 'false'}
-						</Grid>
-						<Grid item xs={12} sm={4}>
-							<b>Node - nvm</b>
-						</Grid>
-						<Grid item xs={12} sm={8}>
-							{(record.node && record.node.nvm) || ' '}
-						</Grid>
+						{record.backups && <>
+							<Grid item xs={12} sm={4}>
+								<b>Backups</b>
+							</Grid>
+							<Grid item xs={12} sm={8}>
+								{record.backups}
+							</Grid>
+						</>}
+						{record.git.checkout &&
+							<Grid item xs={12}>
+								<b>Git checkout allowed</b>
+							</Grid>
+						}
+						{record.git.submodules &&
+							<Grid item xs={12}>
+								<b>Git submodules required</b>
+							</Grid>
+						}
+						{(record.node.nvm && record.node.nvm !== '') && <>
+							<Grid item xs={12} sm={4}>
+								<b>NVM alias</b>
+							</Grid>
+							<Grid item xs={12} sm={8}>
+								{record.node.nvm}
+							</Grid>
+						</>}
+						{record.node.force_install &&
+							<Grid item xs={12}>
+								<b>NPM will --force install</b>
+							</Grid>
+						}
+						{(record.node.script && record.node.script !== '') && <>
+							<Grid item xs={12} sm={4}>
+								<b>NPM script</b>
+							</Grid>
+							<Grid item xs={12} sm={8}>
+								{record.node.script}
+							</Grid>
+						</>}
 					</Grid>
-				)}
+					{rights.build.read &&
+						<Box className="actions">
+							<Button
+								color="primary"
+								onClick={() => buildSet(true)}
+								variant="contained"
+							>Build</Button>
+						</Box>
+					}
+				</>)}
 			</Paper>
 		</Grid>
+		{build &&
+			<Build
+				name={name}
+				onClose={() => buildSet(false)}
+				onError={onError}
+				record={record}
+				rights={rights.build}
+			/>
+		}
 		{remove &&
 			<Dialog
 				onClose={() => removeSet(false)}
@@ -240,10 +282,18 @@ Instance.propTypes = {
 	onUpdated: PropTypes.func.isRequired,
 	record: PropTypes.object.isRequired,
 	rights: PropTypes.exact({
-		create: PropTypes.bool,
-		delete: PropTypes.bool,
-		read: PropTypes.bool,
-		update: PropTypes.bool
+		main: PropTypes.exact({
+			create: PropTypes.bool,
+			delete: PropTypes.bool,
+			read: PropTypes.bool,
+			update: PropTypes.bool
+		}).isRequired,
+		build: PropTypes.exact({
+			create: PropTypes.bool,
+			delete: PropTypes.bool,
+			read: PropTypes.bool,
+			update: PropTypes.bool
+		}).isRequired
 	}).isRequired,
 	tree: PropTypes.instanceOf(Tree).isRequired
 }

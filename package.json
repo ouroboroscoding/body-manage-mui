@@ -37,7 +37,7 @@
 		"@ouroboros/define": "^1.1.1",
 		"@ouroboros/define-mui": "^1.5.3",
 		"@ouroboros/react-radiobuttons-mui": "^1.1.0",
-		"@ouroboros/tools": "^0.6.1",
+		"@ouroboros/tools": "^0.6.5",
 		"prop-types": "^15.8.1"
 	},
 	"peerDependencies": {

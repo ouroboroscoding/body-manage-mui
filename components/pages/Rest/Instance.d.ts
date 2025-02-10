@@ -15,11 +15,11 @@ import type { idStruct } from '@ouroboros/brain-react';
 import type { ServicesStruct } from './Services';
 export type InstanceStruct = {
     path: string;
-    git?: {
-        checkout?: boolean;
-        submodule?: boolean;
+    git: {
+        checkout: boolean;
+        submodule: boolean;
     };
-    python?: {
+    python: {
         which?: string;
         requirements?: string;
     };
@@ -31,7 +31,10 @@ export type InstanceProps = {
     onError: (error: responseErrorStruct) => void;
     onUpdated: onUpdatedCallback;
     record: InstanceStruct;
-    rights: idStruct;
+    rights: {
+        main: idStruct;
+        build: idStruct;
+    };
     tree: Tree;
 };
 export type onDeletedCallback = (name: string) => void;
@@ -55,10 +58,18 @@ declare namespace Instance {
         onUpdated: PropTypes.Validator<(...args: any[]) => any>;
         record: PropTypes.Validator<object>;
         rights: PropTypes.Validator<Required<PropTypes.InferProps<{
-            create: PropTypes.Requireable<boolean>;
-            delete: PropTypes.Requireable<boolean>;
-            read: PropTypes.Requireable<boolean>;
-            update: PropTypes.Requireable<boolean>;
+            main: PropTypes.Validator<Required<PropTypes.InferProps<{
+                create: PropTypes.Requireable<boolean>;
+                delete: PropTypes.Requireable<boolean>;
+                read: PropTypes.Requireable<boolean>;
+                update: PropTypes.Requireable<boolean>;
+            }>>>;
+            build: PropTypes.Validator<Required<PropTypes.InferProps<{
+                create: PropTypes.Requireable<boolean>;
+                delete: PropTypes.Requireable<boolean>;
+                read: PropTypes.Requireable<boolean>;
+                update: PropTypes.Requireable<boolean>;
+            }>>>;
         }>>>;
         tree: PropTypes.Validator<Tree>;
     };

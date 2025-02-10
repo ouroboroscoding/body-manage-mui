@@ -15,7 +15,7 @@ import { Tree } from '@ouroboros/define'
 import { DefineHash, Form } from '@ouroboros/define-mui';
 import manage from '@ouroboros/manage';
 import RestDef from '@ouroboros/manage/define/rest.json';
-import { combine, empty, omap, opop } from '@ouroboros/tools';
+import { combine, empty, omap, opop, pathToTree } from '@ouroboros/tools';
 
 // NPM modules
 import PropTypes from 'prop-types';
@@ -84,6 +84,7 @@ export default function Rest({ onError, onSuccess }: RestProps) {
 
 	// Hooks
 	const rights = useRights('manage_rest');
+	const rbuild = useRights('manage_rest_build');
 
 	// User / archived change effect
 	useEffect(() => {
@@ -145,7 +146,7 @@ export default function Rest({ onError, onSuccess }: RestProps) {
 				if(error.code === errors.DB_DUPLICATE) {
 					reject([ [ 'name', 'Already in use' ] ]);
 				} else if(error.code === errors.DATA_FIELDS) {
-					reject(error.msg);
+					reject(pathToTree(error.msg).record);
 				} else {
 					if(onError) {
 						onError(error);
@@ -174,7 +175,13 @@ export default function Rest({ onError, onSuccess }: RestProps) {
 
 	// Called when a REST instance has been updated
 	function instanceUpdated(name: string, rest: InstanceStruct) {
-		recordsSet(o => combine(o, { [name]: rest }));
+		recordsSet(o => {
+			const oNew = combine(o, { [name]: rest });
+			if(rest.services) {
+				oNew[name].services = rest.services;
+			}
+			return oNew;
+		});
 	}
 
 	// Render
@@ -201,11 +208,17 @@ export default function Rest({ onError, onSuccess }: RestProps) {
 						title="Create Instance"
 						tree={RestTree}
 						type="create"
+						value={{
+							path: '',
+							git: { checkout: false, submodules: false },
+							python: { which: '', requirements: '' },
+							sevices: { }
+						}}
 					/>
 				</Paper>
 			}
 			{!empty(records) ? (
-				<Grid container>
+				<Grid container spacing={2}>
 					{omap(records, (o, k) =>
 						<Instance
 							key={k}
@@ -214,7 +227,10 @@ export default function Rest({ onError, onSuccess }: RestProps) {
 							onDeleted={instanceDeleted}
 							onUpdated={instanceUpdated}
 							record={o}
-							rights={rights}
+							rights={{
+								main: rights,
+								build: rbuild
+							}}
 							tree={RestTree}
 						/>
 					)}

@@ -14,7 +14,7 @@ import { Tree } from '@ouroboros/define';
 import { DefineHash, Form } from '@ouroboros/define-mui';
 import manage from '@ouroboros/manage';
 import RestDef from '@ouroboros/manage/define/rest.json';
-import { combine, empty, omap, opop } from '@ouroboros/tools';
+import { combine, empty, omap, opop, pathToTree } from '@ouroboros/tools';
 // NPM modules
 import PropTypes from 'prop-types';
 import React, { useEffect, useState } from 'react';
@@ -68,6 +68,7 @@ export default function Rest({ onError, onSuccess }) {
     const [records, recordsSet] = useState({});
     // Hooks
     const rights = useRights('manage_rest');
+    const rbuild = useRights('manage_rest_build');
     // User / archived change effect
     useEffect(() => {
         // If we have read rights
@@ -116,7 +117,7 @@ export default function Rest({ onError, onSuccess }) {
                     reject([['name', 'Already in use']]);
                 }
                 else if (error.code === errors.DATA_FIELDS) {
-                    reject(error.msg);
+                    reject(pathToTree(error.msg).record);
                 }
                 else {
                     if (onError) {
@@ -145,7 +146,13 @@ export default function Rest({ onError, onSuccess }) {
     }
     // Called when a REST instance has been updated
     function instanceUpdated(name, rest) {
-        recordsSet(o => combine(o, { [name]: rest }));
+        recordsSet(o => {
+            const oNew = combine(o, { [name]: rest });
+            if (rest.services) {
+                oNew[name].services = rest.services;
+            }
+            return oNew;
+        });
     }
     // Render
     return (React.createElement(Box, { id: "manage_rest", className: "flexGrow padding" },
@@ -158,8 +165,16 @@ export default function Rest({ onError, onSuccess }) {
                             React.createElement("i", { className: 'fa-solid fa-plus' + (create ? ' open' : '') }))))),
         create &&
             React.createElement(Paper, { className: "padding" },
-                React.createElement(Form, { gridSizes: { __default__: { xs: 12 } }, onCancel: () => createSet(false), onSubmit: createSubmit, title: "Create Instance", tree: RestTree, type: "create" })),
-        !empty(records) ? (React.createElement(Grid, { container: true }, omap(records, (o, k) => React.createElement(Instance, { key: k, name: k, onError: onError, onDeleted: instanceDeleted, onUpdated: instanceUpdated, record: o, rights: rights, tree: RestTree })))) : (React.createElement(Typography, null, "No REST instances found."))));
+                React.createElement(Form, { gridSizes: { __default__: { xs: 12 } }, onCancel: () => createSet(false), onSubmit: createSubmit, title: "Create Instance", tree: RestTree, type: "create", value: {
+                        path: '',
+                        git: { checkout: false, submodules: false },
+                        python: { which: '', requirements: '' },
+                        sevices: {}
+                    } })),
+        !empty(records) ? (React.createElement(Grid, { container: true, spacing: 2 }, omap(records, (o, k) => React.createElement(Instance, { key: k, name: k, onError: onError, onDeleted: instanceDeleted, onUpdated: instanceUpdated, record: o, rights: {
+                main: rights,
+                build: rbuild
+            }, tree: RestTree })))) : (React.createElement(Typography, null, "No REST instances found."))));
 }
 // Valid props
 Rest.propTypes = {

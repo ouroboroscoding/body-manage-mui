@@ -13,7 +13,7 @@ import { errors } from '@ouroboros/body';
 import { Tree } from '@ouroboros/define'
 import { Form } from '@ouroboros/define-mui';
 import manage from '@ouroboros/manage';
-import { ucfirst } from '@ouroboros/tools';
+import { pathToTree, ucfirst } from '@ouroboros/tools';
 
 // NPM modules
 import PropTypes from 'prop-types';
@@ -32,17 +32,20 @@ import Paper from '@mui/material/Paper';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 
+// Local components
+import Build from './Build';
+
 // Types
 import type { responseErrorStruct } from '@ouroboros/body';
 import type { idStruct } from '@ouroboros/brain-react';
 import type { ServicesStruct } from './Services';
 export type InstanceStruct = {
 	path: string,
-	git?: {
-		checkout?: boolean,
-		submodule?: boolean
+	git: {
+		checkout: boolean,
+		submodule: boolean
 	},
-	python?: {
+	python: {
 		which?: string,
 		requirements?: string
 	},
@@ -54,7 +57,10 @@ export type InstanceProps = {
 	onError: (error: responseErrorStruct) => void,
 	onUpdated: onUpdatedCallback,
 	record: InstanceStruct,
-	rights: idStruct,
+	rights: {
+		main: idStruct
+		build: idStruct
+	},
 	tree: Tree
 }
 export type onDeletedCallback = (name: string) => void;
@@ -75,6 +81,7 @@ export default function Instance({
 }: InstanceProps) {
 
 	// State
+	const [ build, buildSet ] = useState<boolean>(false);
 	const [ remove, removeSet ] = useState<boolean>(false);
 	const [ update, updateSet ] = useState<boolean>(false);
 
@@ -129,7 +136,7 @@ export default function Instance({
 
 			}, (error: responseErrorStruct) => {
 				if(error.code === errors.DATA_FIELDS) {
-					reject(error.msg);
+					reject(pathToTree(error.msg).record);
 				} else {
 					if(onError) {
 						onError(error);
@@ -148,14 +155,14 @@ export default function Instance({
 				<Box className="flexColumns">
 					<h2 className="flexGrow">{ucfirst(name)}</h2>
 					<Box className="flexStatic">
-						{rights.update &&
+						{rights.main.update &&
 							<Tooltip title="Updated REST instance" className="page_action" onClick={() => updateSet(b => !b)}>
 								<IconButton>
 									<i className={'fa-solid fa-edit' + (update ? ' open' : '')} />
 								</IconButton>
 							</Tooltip>
 						}
-						{rights.delete &&
+						{rights.main.delete &&
 							<Tooltip title="Remove REST instance" className="page_action" onClick={() => removeSet(b => !b)}>
 								<IconButton>
 									<i className="fa-solid fa-trash-alt" />
@@ -213,8 +220,26 @@ export default function Instance({
 						</Grid>
 					</Grid>
 				)}
+				{rights.build.read &&
+					<Box className="actions">
+						<Button
+							color="primary"
+							onClick={() => buildSet(true)}
+							variant="contained"
+						>Build</Button>
+					</Box>
+				}
 			</Paper>
 		</Grid>
+		{build &&
+			<Build
+				name={name}
+				onClose={() => buildSet(false)}
+				onError={onError}
+				record={record}
+				rights={rights.build}
+			/>
+		}
 		{remove &&
 			<Dialog
 				onClose={() => removeSet(false)}
@@ -241,10 +266,18 @@ Instance.propTypes = {
 	onUpdated: PropTypes.func.isRequired,
 	record: PropTypes.object.isRequired,
 	rights: PropTypes.exact({
-		create: PropTypes.bool,
-		delete: PropTypes.bool,
-		read: PropTypes.bool,
-		update: PropTypes.bool
+		main: PropTypes.exact({
+			create: PropTypes.bool,
+			delete: PropTypes.bool,
+			read: PropTypes.bool,
+			update: PropTypes.bool
+		}).isRequired,
+		build: PropTypes.exact({
+			create: PropTypes.bool,
+			delete: PropTypes.bool,
+			read: PropTypes.bool,
+			update: PropTypes.bool
+		}).isRequired
 	}).isRequired,
 	tree: PropTypes.instanceOf(Tree).isRequired
 }

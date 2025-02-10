@@ -12,7 +12,7 @@ import { errors } from '@ouroboros/body';
 import { Tree } from '@ouroboros/define';
 import { Form } from '@ouroboros/define-mui';
 import manage from '@ouroboros/manage';
-import { ucfirst } from '@ouroboros/tools';
+import { pathToTree, ucfirst } from '@ouroboros/tools';
 // NPM modules
 import PropTypes from 'prop-types';
 import React, { useState } from 'react';
@@ -28,6 +28,8 @@ import IconButton from '@mui/material/IconButton';
 import Paper from '@mui/material/Paper';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
+// Local components
+import Build from './Build';
 /**
  * Instance
  *
@@ -40,6 +42,7 @@ import Typography from '@mui/material/Typography';
  */
 export default function Instance({ name, onDeleted, onError, onUpdated, record, rights, tree }) {
     // State
+    const [build, buildSet] = useState(false);
     const [remove, removeSet] = useState(false);
     const [update, updateSet] = useState(false);
     // Called when the delete button on a rest was clicked
@@ -82,7 +85,7 @@ export default function Instance({ name, onDeleted, onError, onUpdated, record, 
                 resolve(data);
             }, (error) => {
                 if (error.code === errors.DATA_FIELDS) {
-                    reject(error.msg);
+                    reject(pathToTree(error.msg).record);
                 }
                 else {
                     if (onError) {
@@ -102,11 +105,11 @@ export default function Instance({ name, onDeleted, onError, onUpdated, record, 
                 React.createElement(Box, { className: "flexColumns" },
                     React.createElement("h2", { className: "flexGrow" }, ucfirst(name)),
                     React.createElement(Box, { className: "flexStatic" },
-                        rights.update &&
+                        rights.main.update &&
                             React.createElement(Tooltip, { title: "Updated REST instance", className: "page_action", onClick: () => updateSet(b => !b) },
                                 React.createElement(IconButton, null,
                                     React.createElement("i", { className: 'fa-solid fa-edit' + (update ? ' open' : '') }))),
-                        rights.delete &&
+                        rights.main.delete &&
                             React.createElement(Tooltip, { title: "Remove REST instance", className: "page_action", onClick: () => removeSet(b => !b) },
                                 React.createElement(IconButton, null,
                                     React.createElement("i", { className: "fa-solid fa-trash-alt" }))))),
@@ -128,7 +131,12 @@ export default function Instance({ name, onDeleted, onError, onUpdated, record, 
                     React.createElement(Grid, { item: true, xs: 12, sm: 8 }, (record.python && record.python.requirements) || ' '),
                     React.createElement(Grid, { item: true, xs: 12, sm: 4 },
                         React.createElement("b", null, "Services")),
-                    React.createElement(Grid, { item: true, xs: 12, sm: 8 }, Object.keys(record.services).join(', ')))))),
+                    React.createElement(Grid, { item: true, xs: 12, sm: 8 }, Object.keys(record.services).join(', ')))),
+                rights.build.read &&
+                    React.createElement(Box, { className: "actions" },
+                        React.createElement(Button, { color: "primary", onClick: () => buildSet(true), variant: "contained" }, "Build")))),
+        build &&
+            React.createElement(Build, { name: name, onClose: () => buildSet(false), onError: onError, record: record, rights: rights.build }),
         remove &&
             React.createElement(Dialog, { onClose: () => removeSet(false), open: true },
                 React.createElement(DialogTitle, null, "Confirm Delete"),
@@ -149,10 +157,18 @@ Instance.propTypes = {
     onUpdated: PropTypes.func.isRequired,
     record: PropTypes.object.isRequired,
     rights: PropTypes.exact({
-        create: PropTypes.bool,
-        delete: PropTypes.bool,
-        read: PropTypes.bool,
-        update: PropTypes.bool
+        main: PropTypes.exact({
+            create: PropTypes.bool,
+            delete: PropTypes.bool,
+            read: PropTypes.bool,
+            update: PropTypes.bool
+        }).isRequired,
+        build: PropTypes.exact({
+            create: PropTypes.bool,
+            delete: PropTypes.bool,
+            read: PropTypes.bool,
+            update: PropTypes.bool
+        }).isRequired
     }).isRequired,
     tree: PropTypes.instanceOf(Tree).isRequired
 };

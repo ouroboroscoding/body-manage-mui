@@ -12,12 +12,13 @@
 import { Node } from '@ouroboros/define';
 import { DefineNodeBase, DefineNode } from '@ouroboros/define-mui';
 import RestDef from '@ouroboros/manage/define/rest.json';
-import { omap, owithout } from '@ouroboros/tools';
+import { isObject, omap, owithout } from '@ouroboros/tools';
 
 // NPM modules
 import React from 'react';
 
 // Material UI
+import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
@@ -90,9 +91,6 @@ export default class Services extends DefineNodeBase {
 	 */
 	add() {
 
-		console.log(this.key);
-		console.log(this.supervisor);
-
 		// Get the values
 		const sKey = (this.key!.current!.value || '').trim();
 		const sSupervisor = (this.supervisor!.current!.value || '').trim();
@@ -107,6 +105,7 @@ export default class Services extends DefineNodeBase {
 
 		// Set the new value and reset the create
 		this.setState({
+			error: false,
 			value: {
 				...this.state.value,
 				[sKey]: oValue
@@ -123,8 +122,9 @@ export default class Services extends DefineNodeBase {
 	 */
 	remove(key: string) {
 
-		// Set the new value by removing the key from the value
+		// Set the new state without the key
 		this.setState({
+			error: false,
 			value: owithout(this.state.value, key)
 		});
 	}
@@ -134,21 +134,39 @@ export default class Services extends DefineNodeBase {
 	 */
 	render() {
 		return (<Grid container spacing={1}>
-			{omap(this.state.value, (o, k) => <React.Fragment key={k}>
-				<Grid item xs={4}>
-					{k}
-				</Grid>
-				<Grid item xs={7}>
-					{o.supervisor || ''}
-				</Grid>
-				<Grid item xs={1}>
-					<Tooltip title="Remove Service" onClick={() => this.remove(k)}>
-						<IconButton>
-							<i className="fa-solid fa-trash-alt" />
-						</IconButton>
-					</Tooltip>
-				</Grid>
-			</React.Fragment>)}
+			{omap(this.state.value, (o, k) => {
+				return o === null ? null :
+				<React.Fragment key={k}>
+					<Grid item xs={4}>
+						{k}
+						{(this.state.error !== false &&
+							k in (this.state.error as Record<string, any>) &&
+							typeof (this.state.error as Record<string, any>)[k] === 'string') &&
+							<Box className="error">
+								{(this.state.error as Record<string, any>)[k]}
+							</Box>
+						}
+					</Grid>
+					<Grid item xs={7}>
+						{o.supervisor || ''}
+						{(this.state.error !== false &&
+							k in (this.state.error as Record<string, any>) &&
+							isObject((this.state.error as Record<string, any>)[k]) &&
+							'supervisor' in (this.state.error as Record<string, any>)[k]) &&
+							<Box className="error">
+								{(this.state.error as Record<string, any>)[k].supervisor}
+							</Box>
+						}
+					</Grid>
+					<Grid item xs={1}>
+						<Tooltip title="Remove Service" onClick={() => this.remove(k)}>
+							<IconButton>
+								<i className="fa-solid fa-trash-alt" />
+							</IconButton>
+						</Tooltip>
+					</Grid>
+				</React.Fragment>
+			})}
 			<Grid item xs={12} md={5}>
 				<DefineNode
 					name="key"

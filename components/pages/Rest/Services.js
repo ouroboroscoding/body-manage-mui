@@ -11,10 +11,11 @@
 import { Node } from '@ouroboros/define';
 import { DefineNodeBase, DefineNode } from '@ouroboros/define-mui';
 import RestDef from '@ouroboros/manage/define/rest.json';
-import { omap, owithout } from '@ouroboros/tools';
+import { isObject, omap, owithout } from '@ouroboros/tools';
 // NPM modules
 import React from 'react';
 // Material UI
+import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
@@ -55,8 +56,6 @@ export default class Services extends DefineNodeBase {
      * Add
      */
     add() {
-        console.log(this.key);
-        console.log(this.supervisor);
         // Get the values
         const sKey = (this.key.current.value || '').trim();
         const sSupervisor = (this.supervisor.current.value || '').trim();
@@ -68,6 +67,7 @@ export default class Services extends DefineNodeBase {
         const oValue = (sSupervisor === '') ? {} : { supervisor: sSupervisor };
         // Set the new value and reset the create
         this.setState({
+            error: false,
             value: {
                 ...this.state.value,
                 [sKey]: oValue
@@ -81,8 +81,9 @@ export default class Services extends DefineNodeBase {
      * Remove
      */
     remove(key) {
-        // Set the new value by removing the key from the value
+        // Set the new state without the key
         this.setState({
+            error: false,
             value: owithout(this.state.value, key)
         });
     }
@@ -91,13 +92,27 @@ export default class Services extends DefineNodeBase {
      */
     render() {
         return (React.createElement(Grid, { container: true, spacing: 1 },
-            omap(this.state.value, (o, k) => React.createElement(React.Fragment, { key: k },
-                React.createElement(Grid, { item: true, xs: 4 }, k),
-                React.createElement(Grid, { item: true, xs: 7 }, o.supervisor || ''),
-                React.createElement(Grid, { item: true, xs: 1 },
-                    React.createElement(Tooltip, { title: "Remove Service", onClick: () => this.remove(k) },
-                        React.createElement(IconButton, null,
-                            React.createElement("i", { className: "fa-solid fa-trash-alt" })))))),
+            omap(this.state.value, (o, k) => {
+                return o === null ? null :
+                    React.createElement(React.Fragment, { key: k },
+                        React.createElement(Grid, { item: true, xs: 4 },
+                            k,
+                            (this.state.error !== false &&
+                                k in this.state.error &&
+                                typeof this.state.error[k] === 'string') &&
+                                React.createElement(Box, { className: "error" }, this.state.error[k])),
+                        React.createElement(Grid, { item: true, xs: 7 },
+                            o.supervisor || '',
+                            (this.state.error !== false &&
+                                k in this.state.error &&
+                                isObject(this.state.error[k]) &&
+                                'supervisor' in this.state.error[k]) &&
+                                React.createElement(Box, { className: "error" }, this.state.error[k].supervisor)),
+                        React.createElement(Grid, { item: true, xs: 1 },
+                            React.createElement(Tooltip, { title: "Remove Service", onClick: () => this.remove(k) },
+                                React.createElement(IconButton, null,
+                                    React.createElement("i", { className: "fa-solid fa-trash-alt" })))));
+            }),
             React.createElement(Grid, { item: true, xs: 12, md: 5 },
                 React.createElement(DefineNode, { name: "key", node: KeyNode, ref: this.key, type: "create" })),
             React.createElement(Grid, { item: true, xs: 11, md: 6 },
