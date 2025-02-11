@@ -14,6 +14,7 @@ import type { responseErrorStruct } from '@ouroboros/body';
 import type { idStruct } from '@ouroboros/brain-react';
 export type InstanceStruct = {
     backups?: string;
+    build?: string;
     git: {
         checkout: boolean;
         submodules: boolean;
@@ -23,8 +24,8 @@ export type InstanceStruct = {
         nvm?: string;
         script?: string;
     };
-    output: string;
     path: string;
+    web_root: string;
 };
 export type InstanceProps = {
     name: string;

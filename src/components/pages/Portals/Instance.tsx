@@ -40,6 +40,7 @@ import type { responseErrorStruct } from '@ouroboros/body';
 import type { idStruct } from '@ouroboros/brain-react';
 export type InstanceStruct = {
 	backups?: string,
+	build?: string,
 	git: {
 		checkout: boolean,
 		submodules: boolean
@@ -49,8 +50,8 @@ export type InstanceStruct = {
 		nvm?: string,
 		script?: string
 	},
-	output: string,
-	path: string
+	path: string,
+	web_root: string
 }
 export type InstanceProps = {
 	name: string,
@@ -149,6 +150,23 @@ export default function Instance({
 		});
 	}
 
+	// Generate run / build commands
+	const aGit = [];
+	if(record.git.checkout) {
+		aGit.push('git checkout [branch]')
+	}
+	aGit.push(record.git.submodules ?
+		'git pull --recurse-submodules' : 'git pull'
+	)
+	const aNode = [];
+	if(record.node.nvm) {
+		aNode.push(`nvm use ${record.node.nvm}`);
+	}
+	aNode.push(record.node.force_install ?
+		'npm install --force' : 'npm install'
+	)
+	aNode.push(`npm run ${record.node.script || name}`)
+
 	// Render
 	return (<>
 		<Grid item xs={12} md={6} xl={4}>
@@ -189,51 +207,40 @@ export default function Instance({
 						<Grid item xs={12} sm={8}>
 							{record.path}
 						</Grid>
+						{record.build && <>
+							<Grid item xs={12} sm={4}>
+								<b>Build path</b>
+							</Grid>
+							<Grid item xs={12} sm={8}>
+								{record.build}
+							</Grid>
+						</>}
 						<Grid item xs={12} sm={4}>
-							<b>Output</b>
+							<b>Web root</b>
 						</Grid>
 						<Grid item xs={12} sm={8}>
-							{record.output}
+							{record.web_root}
 						</Grid>
 						{record.backups && <>
 							<Grid item xs={12} sm={4}>
-								<b>Backups</b>
+								<b>Backups path</b>
 							</Grid>
 							<Grid item xs={12} sm={8}>
 								{record.backups}
 							</Grid>
 						</>}
-						{record.git.checkout &&
-							<Grid item xs={12}>
-								<b>Git checkout allowed</b>
-							</Grid>
-						}
-						{record.git.submodules &&
-							<Grid item xs={12}>
-								<b>Git submodules required</b>
-							</Grid>
-						}
-						{(record.node.nvm && record.node.nvm !== '') && <>
-							<Grid item xs={12} sm={4}>
-								<b>NVM alias</b>
-							</Grid>
-							<Grid item xs={12} sm={8}>
-								{record.node.nvm}
-							</Grid>
-						</>}
-						{record.node.force_install &&
-							<Grid item xs={12}>
-								<b>NPM will --force install</b>
-							</Grid>
-						}
-						{(record.node.script && record.node.script !== '') && <>
-							<Grid item xs={12} sm={4}>
-								<b>NPM script</b>
-							</Grid>
-							<Grid item xs={12} sm={8}>
-								{record.node.script}
-							</Grid>
-						</>}
+						<Grid item xs={12} sm={4}>
+							<b>Git</b>
+						</Grid>
+						<Grid item xs={12} sm={8}>
+							{aGit.join(' && ')}
+						</Grid>
+						<Grid item xs={12} sm={4}>
+							<b>Node</b>
+						</Grid>
+						<Grid item xs={12} sm={8}>
+							{aNode.join(' && ')}
+						</Grid>
 					</Grid>
 					{rights.build.read &&
 						<Box className="actions">

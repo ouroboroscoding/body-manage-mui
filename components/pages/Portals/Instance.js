@@ -98,6 +98,20 @@ export default function Instance({ name, onDeleted, onError, onUpdated, record, 
             });
         });
     }
+    // Generate run / build commands
+    const aGit = [];
+    if (record.git.checkout) {
+        aGit.push('git checkout [branch]');
+    }
+    aGit.push(record.git.submodules ?
+        'git pull --recurse-submodules' : 'git pull');
+    const aNode = [];
+    if (record.node.nvm) {
+        aNode.push(`nvm use ${record.node.nvm}`);
+    }
+    aNode.push(record.node.force_install ?
+        'npm install --force' : 'npm install');
+    aNode.push(`npm run ${record.node.script || name}`);
     // Render
     return (React.createElement(React.Fragment, null,
         React.createElement(Grid, { item: true, xs: 12, md: 6, xl: 4 },
@@ -118,30 +132,23 @@ export default function Instance({ name, onDeleted, onError, onUpdated, record, 
                         React.createElement(Grid, { item: true, xs: 12, sm: 4 },
                             React.createElement("b", null, "Path")),
                         React.createElement(Grid, { item: true, xs: 12, sm: 8 }, record.path),
+                        record.build && React.createElement(React.Fragment, null,
+                            React.createElement(Grid, { item: true, xs: 12, sm: 4 },
+                                React.createElement("b", null, "Build path")),
+                            React.createElement(Grid, { item: true, xs: 12, sm: 8 }, record.build)),
                         React.createElement(Grid, { item: true, xs: 12, sm: 4 },
-                            React.createElement("b", null, "Output")),
-                        React.createElement(Grid, { item: true, xs: 12, sm: 8 }, record.output),
+                            React.createElement("b", null, "Web root")),
+                        React.createElement(Grid, { item: true, xs: 12, sm: 8 }, record.web_root),
                         record.backups && React.createElement(React.Fragment, null,
                             React.createElement(Grid, { item: true, xs: 12, sm: 4 },
-                                React.createElement("b", null, "Backups")),
+                                React.createElement("b", null, "Backups path")),
                             React.createElement(Grid, { item: true, xs: 12, sm: 8 }, record.backups)),
-                        record.git.checkout &&
-                            React.createElement(Grid, { item: true, xs: 12 },
-                                React.createElement("b", null, "Git checkout allowed")),
-                        record.git.submodules &&
-                            React.createElement(Grid, { item: true, xs: 12 },
-                                React.createElement("b", null, "Git submodules required")),
-                        (record.node.nvm && record.node.nvm !== '') && React.createElement(React.Fragment, null,
-                            React.createElement(Grid, { item: true, xs: 12, sm: 4 },
-                                React.createElement("b", null, "NVM alias")),
-                            React.createElement(Grid, { item: true, xs: 12, sm: 8 }, record.node.nvm)),
-                        record.node.force_install &&
-                            React.createElement(Grid, { item: true, xs: 12 },
-                                React.createElement("b", null, "NPM will --force install")),
-                        (record.node.script && record.node.script !== '') && React.createElement(React.Fragment, null,
-                            React.createElement(Grid, { item: true, xs: 12, sm: 4 },
-                                React.createElement("b", null, "NPM script")),
-                            React.createElement(Grid, { item: true, xs: 12, sm: 8 }, record.node.script))),
+                        React.createElement(Grid, { item: true, xs: 12, sm: 4 },
+                            React.createElement("b", null, "Git")),
+                        React.createElement(Grid, { item: true, xs: 12, sm: 8 }, aGit.join(' && ')),
+                        React.createElement(Grid, { item: true, xs: 12, sm: 4 },
+                            React.createElement("b", null, "Node")),
+                        React.createElement(Grid, { item: true, xs: 12, sm: 8 }, aNode.join(' && '))),
                     rights.build.read &&
                         React.createElement(Box, { className: "actions" },
                             React.createElement(Button, { color: "primary", onClick: () => buildSet(true), variant: "contained" }, "Build")))))),

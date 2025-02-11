@@ -34,6 +34,7 @@
 		"typescript": "^4.8.3"
 	},
 	"dependencies": {
+		"@ouroboros/dates": "^1.1.1",
 		"@ouroboros/define": "^1.1.1",
 		"@ouroboros/define-mui": "^1.5.3",
 		"@ouroboros/react-radiobuttons-mui": "^1.1.0",

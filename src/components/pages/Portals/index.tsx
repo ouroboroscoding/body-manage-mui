@@ -10,7 +10,7 @@
 
 // Ouroboros modules
 import { errors } from '@ouroboros/body';
-import { idStruct, useRights } from '@ouroboros/brain-react';
+import { useRights } from '@ouroboros/brain-react';
 import { Tree } from '@ouroboros/define'
 import { Form } from '@ouroboros/define-mui';
 import manage from '@ouroboros/manage';
@@ -36,12 +36,14 @@ import Instance from './Instance';
 const RestTree = new Tree(RestDef, {
 	__name__: 'Portal',
 	__ui__: {
-		__create__: [ 'name', 'path', 'output', 'backups', 'git', 'node' ],
-		__update__: [ 'path', 'output', 'backups', 'git', 'node' ]
+		__create__: [ 'name', 'path', 'build', 'web_root', 'backups', 'git', 'node' ],
+		__update__: [ 'path', 'build', 'web_root', 'backups', 'git', 'node' ]
 	},
 	name: { __type__: "string" },
 	path: { __ui__: { __title__: 'Path to the repository' } },
-	output: { __ui__: { __title__: 'Path to output folder' } },
+	build: { __ui__: { __title__: 'Path to build folder' } },
+	web_root: { __ui__: { __title__: 'Path to copy files after build' } },
+	backups: { __ui__: { __title__: 'Backups folder' } },
 	git: {
 		__ui__: { __title__: "Git Options" },
 		checkout: { __ui__: { __title__: 'Allow switching branches?' } },
@@ -62,7 +64,6 @@ export type PortalsProps = {
 	onError: (error: responseErrorStruct) => void,
 	onSuccess: (type: string) => void
 }
-type buildRights = idStruct & { build?: boolean }
 
 /**
  * Portals
