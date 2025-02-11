@@ -29,6 +29,7 @@ import Paper from '@mui/material/Paper';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 // Local components
+import Backups from './Backups';
 import Build from './Build';
 /**
  * Instance
@@ -42,6 +43,7 @@ import Build from './Build';
  */
 export default function Instance({ name, onDeleted, onError, onUpdated, record, rights, tree }) {
     // State
+    const [backups, backupsSet] = useState(false);
     const [build, buildSet] = useState(false);
     const [remove, removeSet] = useState(false);
     const [update, updateSet] = useState(false);
@@ -151,7 +153,10 @@ export default function Instance({ name, onDeleted, onError, onUpdated, record, 
                         React.createElement(Grid, { item: true, xs: 12, sm: 8 }, aNode.join(' && '))),
                     rights.build.read &&
                         React.createElement(Box, { className: "actions" },
+                            React.createElement(Button, { color: "primary", onClick: () => backupsSet(true), variant: "contained" }, "Backups"),
                             React.createElement(Button, { color: "primary", onClick: () => buildSet(true), variant: "contained" }, "Build")))))),
+        backups &&
+            React.createElement(Backups, { name: name, onClose: () => backupsSet(false), onError: onError, rights: rights.build }),
         build &&
             React.createElement(Build, { name: name, onClose: () => buildSet(false), onError: onError, record: record, rights: rights.build }),
         remove &&

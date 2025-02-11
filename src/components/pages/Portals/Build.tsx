@@ -50,6 +50,7 @@ type buildStruct = {
 
 // Styles
 const preBox = {
+	maxHeight: '80vh',
 	overflow: 'auto',
 	padding: '5px 0'
 }
@@ -75,7 +76,7 @@ export default function Build({
 	const [ output, outputSet ] = useState<Record<string, string>>();
 	const [ tab, tabSet ] = useState<number>(1);
 
-	// Load / record effect
+	// Load / name effect
 	useEffect(() => {
 
 		// Clear details and output
@@ -92,7 +93,7 @@ export default function Build({
 			buildSet(o => { return { ...o, backup: true }});
 		}
 
-	}, [ record ]);
+	}, [ name, record ]);
 
 	// Called when the checkout branch changes
 	function checkoutChanged(
@@ -191,63 +192,67 @@ export default function Build({
 							style={{ marginBottom: '10px', width: '100%' }}
 							value={details!.status}
 						/>
-						<Grid container spacing={1}>
-							{record.git.checkout && <>
+						{rights.create && <>
+							<Grid container spacing={1}>
+								{record.git.checkout && <>
+									<Grid item xs={12} sm={6}>
+										Select the branch to pull
+									</Grid>
+									<Grid item xs={12} sm={6} className="actions">
+										<Select
+											label=""
+											onChange={checkoutChanged}
+											native
+											size="small"
+											value={build.checkout || details!.branch}
+											variant="outlined"
+										>
+											{details!.branches.map((s: string) =>
+												<option key={s} value={s}>{s}</option>
+											)}
+										</Select>
+									</Grid>
+								</>}
 								<Grid item xs={12} sm={6}>
-									Select the branch to pull
-								</Grid>
-								<Grid item xs={12} sm={6} className="actions">
-									<Select
-										label=""
-										onChange={checkoutChanged}
-										native
-										size="small"
-										value={build.checkout || details!.branch}
-										variant="outlined"
-									>
-										{details!.branches.map((s: string) =>
-											<option key={s} value={s}>{s}</option>
-										)}
-									</Select>
-								</Grid>
-							</>}
-							<Grid item xs={12} sm={6}>
-								Clear local changes before pulling?
-							</Grid>
-							<Grid item xs={12} sm={6} className="actions">
-								<Switch
-									checked={build.clear}
-									onChange={ev => buildSet(o => {
-										return { ...o, clear: ev.target.checked }
-									})}
-									size="small"
-								/>
-							</Grid>
-							{(record.backups && record.backups !== '') && <>
-								<Grid item xs={12} sm={6}>
-									Backup current files?
+									Clear local changes before pulling?
 								</Grid>
 								<Grid item xs={12} sm={6} className="actions">
 									<Switch
-										checked={build.backup}
+										checked={build.clear}
 										onChange={ev => buildSet(o => {
-											return { ...o, backup: ev.target.checked }
+											return { ...o, clear: ev.target.checked }
 										})}
 										size="small"
 									/>
 								</Grid>
-							</>}
-						</Grid>
-						<hr />
-						<Typography>Preview</Typography>
-						<Box style={preBox}>
-							<pre>{lCommands.join(' &&\n')}</pre>
-						</Box>
+								{(record.backups && record.backups !== '') && <>
+									<Grid item xs={12} sm={6}>
+										Backup current files?
+									</Grid>
+									<Grid item xs={12} sm={6} className="actions">
+										<Switch
+											checked={build.backup}
+											onChange={ev => buildSet(o => {
+												return { ...o, backup: ev.target.checked }
+											})}
+											size="small"
+										/>
+									</Grid>
+								</>}
+							</Grid>
+							<hr />
+							<Typography>Preview</Typography>
+							<Box style={preBox}>
+								<pre>{lCommands.join(' &&\n')}</pre>
+							</Box>
+						</>}
 					</>}
 				</DialogContent>
 				<DialogActions>
 					<Button color="secondary" onClick={onClose} variant="contained">Cancel</Button>
-					<Button disabled={building} color="primary" onClick={submit} variant="contained">Build</Button>
+					{rights.create &&
+						<Button disabled={building} color="primary" onClick={submit} variant="contained">Build</Button>
+					}
 				</DialogActions>
 			</>)}
 		</Dialog>

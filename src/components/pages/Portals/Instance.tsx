@@ -33,6 +33,7 @@ import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 
 // Local components
+import Backups from './Backups';
 import Build from './Build';
 
 // Types
@@ -83,6 +84,7 @@ export default function Instance({
 }: InstanceProps) {
 
 	// State
+	const [ backups, backupsSet ] = useState<boolean>(false);
 	const [ build, buildSet ] = useState<boolean>(false);
 	const [ remove, removeSet ] = useState<boolean>(false);
 	const [ update, updateSet ] = useState<boolean>(false);
@@ -246,6 +248,11 @@ export default function Instance({
 						<Box className="actions">
 							<Button
 								color="primary"
+								onClick={() => backupsSet(true)}
+								variant="contained"
+							>Backups</Button>
+							<Button
+								color="primary"
 								onClick={() => buildSet(true)}
 								variant="contained"
 							>Build</Button>
@@ -254,6 +261,14 @@ export default function Instance({
 				</>)}
 			</Paper>
 		</Grid>
+		{backups &&
+			<Backups
+				name={name}
+				onClose={() => backupsSet(false)}
+				onError={onError}
+				rights={rights.build}
+			/>
+		}
 		{build &&
 			<Build
 				name={name}

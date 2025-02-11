@@ -29,6 +29,7 @@ import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 // Styles
 const preBox = {
+    maxHeight: '80vh',
     overflow: 'auto',
     padding: '5px 0'
 };
@@ -49,7 +50,7 @@ export default function Build({ name, onClose, onError, record, rights }) {
     const [details, detailsSet] = useState();
     const [output, outputSet] = useState();
     const [tab, tabSet] = useState(1);
-    // Load / record effect
+    // Load / name effect
     useEffect(() => {
         // Clear details and output
         buildSet({ clear: false });
@@ -62,7 +63,7 @@ export default function Build({ name, onClose, onError, record, rights }) {
         if (record.backups && record.backups !== '') {
             buildSet(o => { return { ...o, backup: true }; });
         }
-    }, [record]);
+    }, [name, record]);
     // Called when the checkout branch changes
     function checkoutChanged(ev, c) {
         // If the new branch is the same as the original
@@ -131,29 +132,31 @@ export default function Build({ name, onClose, onError, record, rights }) {
                 'Loading...' : React.createElement(React.Fragment, null,
                 React.createElement(Typography, null, "Status:"),
                 React.createElement("textarea", { readOnly: true, rows: 10, style: { marginBottom: '10px', width: '100%' }, value: details.status }),
-                React.createElement(Grid, { container: true, spacing: 1 },
-                    record.git.checkout && React.createElement(React.Fragment, null,
-                        React.createElement(Grid, { item: true, xs: 12, sm: 6 }, "Select the branch to pull"),
+                rights.create && React.createElement(React.Fragment, null,
+                    React.createElement(Grid, { container: true, spacing: 1 },
+                        record.git.checkout && React.createElement(React.Fragment, null,
+                            React.createElement(Grid, { item: true, xs: 12, sm: 6 }, "Select the branch to pull"),
+                            React.createElement(Grid, { item: true, xs: 12, sm: 6, className: "actions" },
+                                React.createElement(Select, { label: "", onChange: checkoutChanged, native: true, size: "small", value: build.checkout || details.branch, variant: "outlined" }, details.branches.map((s) => React.createElement("option", { key: s, value: s }, s))))),
+                        React.createElement(Grid, { item: true, xs: 12, sm: 6 }, "Clear local changes before pulling?"),
                         React.createElement(Grid, { item: true, xs: 12, sm: 6, className: "actions" },
-                            React.createElement(Select, { label: "", onChange: checkoutChanged, native: true, size: "small", value: build.checkout || details.branch, variant: "outlined" }, details.branches.map((s) => React.createElement("option", { key: s, value: s }, s))))),
-                    React.createElement(Grid, { item: true, xs: 12, sm: 6 }, "Clear local changes before pulling?"),
-                    React.createElement(Grid, { item: true, xs: 12, sm: 6, className: "actions" },
-                        React.createElement(Switch, { checked: build.clear, onChange: ev => buildSet(o => {
-                                return { ...o, clear: ev.target.checked };
-                            }), size: "small" })),
-                    (record.backups && record.backups !== '') && React.createElement(React.Fragment, null,
-                        React.createElement(Grid, { item: true, xs: 12, sm: 6 }, "Backup current files?"),
-                        React.createElement(Grid, { item: true, xs: 12, sm: 6, className: "actions" },
-                            React.createElement(Switch, { checked: build.backup, onChange: ev => buildSet(o => {
-                                    return { ...o, backup: ev.target.checked };
-                                }), size: "small" })))),
-                React.createElement("hr", null),
-                React.createElement(Typography, null, "Preview"),
-                React.createElement(Box, { style: preBox },
-                    React.createElement("pre", null, lCommands.join(' &&\n'))))),
+                            React.createElement(Switch, { checked: build.clear, onChange: ev => buildSet(o => {
+                                    return { ...o, clear: ev.target.checked };
+                                }), size: "small" })),
+                        (record.backups && record.backups !== '') && React.createElement(React.Fragment, null,
+                            React.createElement(Grid, { item: true, xs: 12, sm: 6 }, "Backup current files?"),
+                            React.createElement(Grid, { item: true, xs: 12, sm: 6, className: "actions" },
+                                React.createElement(Switch, { checked: build.backup, onChange: ev => buildSet(o => {
+                                        return { ...o, backup: ev.target.checked };
+                                    }), size: "small" })))),
+                    React.createElement("hr", null),
+                    React.createElement(Typography, null, "Preview"),
+                    React.createElement(Box, { style: preBox },
+                        React.createElement("pre", null, lCommands.join(' &&\n')))))),
             React.createElement(DialogActions, null,
                 React.createElement(Button, { color: "secondary", onClick: onClose, variant: "contained" }, "Cancel"),
-                React.createElement(Button, { disabled: building, color: "primary", onClick: submit, variant: "contained" }, "Build"))))));
+                rights.create &&
+                    React.createElement(Button, { disabled: building, color: "primary", onClick: submit, variant: "contained" }, "Build"))))));
 }
 // Valid props
 Build.propTypes = {

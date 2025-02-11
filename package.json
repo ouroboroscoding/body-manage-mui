@@ -37,7 +37,7 @@
 		"@ouroboros/dates": "^1.1.1",
 		"@ouroboros/define": "^1.1.1",
 		"@ouroboros/define-mui": "^1.5.3",
-		"@ouroboros/react-radiobuttons-mui": "^1.1.0",
+		"@ouroboros/manage": "^1.0.0",
 		"@ouroboros/tools": "^0.6.5",
 		"prop-types": "^15.8.1"
 	},
@@ -47,7 +47,6 @@
 		"@mui/material": "^5.5.1",
 		"@ouroboros/body": "^1.1.2",
 		"@ouroboros/brain-react": "^1.1.0",
-		"@ouroboros/manage": "file:../manage",
 		"react": "^17.0.2 || ^18.0.0",
 		"react-dom": "^17.0.2 || ^18.0.0"
 	}
