@@ -113,7 +113,7 @@ export default function Instance({ name, onDeleted, onError, onUpdated, record, 
     }
     aNode.push(record.node.force_install ?
         'npm install --force' : 'npm install');
-    aNode.push(`npm run ${record.node.script || name}`);
+    aNode.push(`npm run ${record.node.script || 'build'}`);
     // Render
     return (React.createElement(React.Fragment, null,
         React.createElement(Grid, { item: true, xs: 12, md: 6, xl: 4 },
@@ -153,7 +153,8 @@ export default function Instance({ name, onDeleted, onError, onUpdated, record, 
                         React.createElement(Grid, { item: true, xs: 12, sm: 8 }, aNode.join(' && '))),
                     rights.build.read &&
                         React.createElement(Box, { className: "actions" },
-                            React.createElement(Button, { color: "primary", onClick: () => backupsSet(true), variant: "contained" }, "Backups"),
+                            record.backups &&
+                                React.createElement(Button, { color: "primary", onClick: () => backupsSet(true), variant: "contained" }, "Backups"),
                             React.createElement(Button, { color: "primary", onClick: () => buildSet(true), variant: "contained" }, "Build")))))),
         backups &&
             React.createElement(Backups, { name: name, onClose: () => backupsSet(false), onError: onError, rights: rights.build }),
