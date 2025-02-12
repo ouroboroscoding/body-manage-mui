@@ -167,7 +167,7 @@ export default function Instance({
 	aNode.push(record.node.force_install ?
 		'npm install --force' : 'npm install'
 	)
-	aNode.push(`npm run ${record.node.script || name}`)
+	aNode.push(`npm run ${record.node.script || 'build'}`)
 
 	// Render
 	return (<>
@@ -246,11 +246,13 @@ export default function Instance({
 					</Grid>
 					{rights.build.read &&
 						<Box className="actions">
-							<Button
-								color="primary"
-								onClick={() => backupsSet(true)}
-								variant="contained"
-							>Backups</Button>
+							{record.backups &&
+								<Button
+									color="primary"
+									onClick={() => backupsSet(true)}
+									variant="contained"
+								>Backups</Button>
+							}
 							<Button
 								color="primary"
 								onClick={() => buildSet(true)}
