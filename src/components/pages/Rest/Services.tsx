@@ -24,8 +24,9 @@ import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 
 // Types
-import type { DefineNodeBaseProps } from '@ouroboros/define-mui';
-import { DefineNodeBaseState } from '@ouroboros/define-mui/build/DefineNode/Base';
+import type {
+	DefineNodeBaseProps, DefineNodeBaseState
+} from '@ouroboros/define-mui';
 export type ServicesStruct = {
 	[x: string]: {
 		supervisor?: string

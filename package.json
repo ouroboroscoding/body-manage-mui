@@ -1,6 +1,6 @@
 {
 	"name": "@ouroboros/manage-mui",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"description": "Components for use with the Mouth service",
 	"main": "index.js",
 	"types": "index.d.ts",
@@ -35,8 +35,8 @@
 	},
 	"dependencies": {
 		"@ouroboros/dates": "^1.1.1",
-		"@ouroboros/define": "^1.1.1",
-		"@ouroboros/define-mui": "^1.5.3",
+		"@ouroboros/define": "^1.1.2",
+		"@ouroboros/define-mui": "^1.5.5",
 		"@ouroboros/manage": "^1.0.0",
 		"@ouroboros/tools": "^0.6.5",
 		"prop-types": "^15.8.1"
