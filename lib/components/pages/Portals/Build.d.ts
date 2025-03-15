@@ -11,7 +11,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import type { responseErrorStruct } from '@ouroboros/body';
 import type { idStruct } from '@ouroboros/brain-react';
-import type { InstanceStruct } from './Instance';
+import type { InstanceStruct } from '../../../types/portal';
 export type BuildProps = {
     name: string;
     onClose: () => void;

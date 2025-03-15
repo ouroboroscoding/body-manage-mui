@@ -12,21 +12,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import type { responseErrorStruct } from '@ouroboros/body';
 import type { idStruct } from '@ouroboros/brain-react';
-export type InstanceStruct = {
-    backups?: string;
-    build?: string;
-    git: {
-        checkout: boolean;
-        submodules: boolean;
-    };
-    node: {
-        force_install: string;
-        nvm?: string;
-        script?: string;
-    };
-    path: string;
-    web_root: string;
-};
+import type { InstanceStruct } from '../../../types/portal';
 export type InstanceProps = {
     name: string;
     onDeleted: onDeletedCallback;

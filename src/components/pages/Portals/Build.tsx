@@ -9,7 +9,6 @@
  */
 
 // Ouroboros modules
-import { iso } from '@ouroboros/dates';
 import manage from '@ouroboros/manage';
 import { owithout } from '@ouroboros/tools';
 
@@ -31,21 +30,19 @@ import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 
+// Composites
+import BuildCommands from '../../composites/portal/BuildCommands';
+
 // Types
 import type { responseErrorStruct } from '@ouroboros/body';
 import type { idStruct } from '@ouroboros/brain-react';
-import type { InstanceStruct } from './Instance';
+import type { BuildStruct, InstanceStruct } from '../../../types/portal';
 export type BuildProps = {
 	name: string,
 	onClose: () => void,
 	onError: (error: responseErrorStruct) => void,
 	record: InstanceStruct,
 	rights: idStruct
-}
-type buildStruct = {
-	backup?: boolean,
-	checkout?: string,
-	clear: boolean
 }
 
 // Styles
@@ -70,7 +67,7 @@ export default function Build({
 }: BuildProps) {
 
 	// State
-	const [ build, buildSet ] = useState<buildStruct>({ clear: false });
+	const [ build, buildSet ] = useState<BuildStruct>({ clear: false });
 	const [ building, buildingSet ] = useState<boolean>(false);
 	const [ details, detailsSet ] = useState<Record<string, any>>();
 	const [ output, outputSet ] = useState<Record<string, string>>();
@@ -102,7 +99,7 @@ export default function Build({
 
 		// If the new branch is the same as the original
 		if(details!.branch === ev.target.value) {
-			buildSet(o => (owithout(o, 'checkout') as buildStruct));
+			buildSet(o => (owithout(o, 'checkout') as BuildStruct));
 		} else {
 			buildSet(o => { return { ...o, checkout: ev.target.value } });
 		}
@@ -122,36 +119,6 @@ export default function Build({
 			}
 		}, onError).finally(() => buildingSet(false));
 	}
-
-	// Build commands list
-	const lCommands = [ `cd ${record.path}`, 'git fetch' ];
-	if(build.clear) {
-		lCommands.push('git checkout .')
-	}
-	if(build.checkout) {
-		lCommands.push(`git checkout ${build.checkout}`);
-	}
-	lCommands.push(record.git.submodules ?
-		'git pull --recurse-submodules' : 'git pull'
-	)
-	if(record.node.nvm) {
-		lCommands.push(`nvm use ${record.node.nvm}`);
-	}
-	lCommands.push( ...[
-		record.node.force_install ? 'npm install --force' : 'npm install',
-		`npm run ${record.node.script || name}`
-	])
-	if(record.backups && build.backup) {
-		lCommands.push(
-			`mv ${record.web_root} ${record.backups}/${iso(new Date(), true, false, true)}`
-		)
-	}
-	lCommands.push(...[
-		`mkdir -p ${record.web_root}`,
-		record.build ?
-			`cp -r ${record.build}/* ${record.web_root}/.` :
-			`cp -r ${record.path}/dist/* ${record.web_root}/.`
-	])
 
 	// Render
 	return (
@@ -242,9 +209,12 @@ export default function Build({
 							</Grid>
 							<hr />
 							<Typography>Preview</Typography>
-							<Box style={preBox}>
-								<pre>{lCommands.join(' &&\n')}</pre>
-							</Box>
+							<BuildCommands
+								build={build}
+								instance={record}
+								name={name}
+								style={preBox}
+							/>
 						</>}
 					</>}
 				</DialogContent>
