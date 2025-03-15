@@ -59,7 +59,7 @@ const RestTree = new Tree(RestDef, {
 
 // Types
 import type { responseErrorStruct } from '@ouroboros/body';
-import type { InstanceStruct } from './Instance';
+import type { InstanceStruct } from '../../../types/portal';
 export type PortalsProps = {
 	onError: (error: responseErrorStruct) => void,
 	onSuccess: (type: string) => void

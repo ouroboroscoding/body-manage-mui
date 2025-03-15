@@ -11,9 +11,9 @@
 // Ouroboros modules
 import { errors } from '@ouroboros/body';
 import { Tree } from '@ouroboros/define'
-import { Form } from '@ouroboros/define-mui';
+import { Form  } from '@ouroboros/define-mui';
 import manage from '@ouroboros/manage';
-import { pathToTree, ucfirst } from '@ouroboros/tools';
+import { combine, pathToTree, ucfirst } from '@ouroboros/tools';
 
 // NPM modules
 import PropTypes from 'prop-types';
@@ -32,6 +32,9 @@ import Paper from '@mui/material/Paper';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 
+// Composites
+import BuildCommands from '../../composites/portal/BuildCommands';
+
 // Local components
 import Backups from './Backups';
 import Build from './Build';
@@ -39,21 +42,7 @@ import Build from './Build';
 // Types
 import type { responseErrorStruct } from '@ouroboros/body';
 import type { idStruct } from '@ouroboros/brain-react';
-export type InstanceStruct = {
-	backups?: string,
-	build?: string,
-	git: {
-		checkout: boolean,
-		submodules: boolean
-	},
-	node: {
-		force_install: string,
-		nvm?: string,
-		script?: string
-	},
-	path: string,
-	web_root: string
-}
+import type { InstanceStruct } from '../../../types/portal';
 export type InstanceProps = {
 	name: string,
 	onDeleted: onDeletedCallback,
@@ -68,6 +57,13 @@ export type InstanceProps = {
 }
 export type onDeletedCallback = (name: string) => void;
 export type onUpdatedCallback = (name: string, rest: InstanceStruct) => void
+
+// Styles
+const preBox = {
+	maxHeight: '80vh',
+	overflow: 'auto',
+	padding: '5px 0'
+}
 
 /**
  * Instance
@@ -88,6 +84,7 @@ export default function Instance({
 	const [ build, buildSet ] = useState<boolean>(false);
 	const [ remove, removeSet ] = useState<boolean>(false);
 	const [ update, updateSet ] = useState<boolean>(false);
+	const [ updates, updatesSet ] = useState<InstanceStruct>();
 
 	// Called when the delete button on a rest was clicked
 	function deleteClick() {
@@ -130,6 +127,7 @@ export default function Instance({
 
 					// Hide the update mode
 					updateSet(false);
+					updatesSet(undefined);
 
 					// Notify the parent
 					onUpdated(name, portal);
@@ -152,22 +150,10 @@ export default function Instance({
 		});
 	}
 
-	// Generate run / build commands
-	const aGit = [];
-	if(record.git.checkout) {
-		aGit.push('git checkout [branch]')
+	// Called when data is being updated (but not yet saved)
+	function updateChange(value: any) {
+		updatesSet(o => combine(o || record, value) as InstanceStruct)
 	}
-	aGit.push(record.git.submodules ?
-		'git pull --recurse-submodules' : 'git pull'
-	)
-	const aNode = [];
-	if(record.node.nvm) {
-		aNode.push(`nvm use ${record.node.nvm}`);
-	}
-	aNode.push(record.node.force_install ?
-		'npm install --force' : 'npm install'
-	)
-	aNode.push(`npm run ${record.node.script || 'build'}`)
 
 	// Render
 	return (<>
@@ -177,7 +163,10 @@ export default function Instance({
 					<h2 className="flexGrow">{ucfirst(name)}</h2>
 					<Box className="flexStatic">
 						{rights.main.update &&
-							<Tooltip title="Updated Portal instance" className="page_action" onClick={() => updateSet(b => !b)}>
+							<Tooltip title="Updated Portal instance" className="page_action" onClick={() => updateSet(b => {
+								if(b) { updatesSet(undefined) }
+								return !b
+							})}>
 								<IconButton>
 									<i className={'fa-solid fa-edit' + (update ? ' open' : '')} />
 								</IconButton>
@@ -192,75 +181,41 @@ export default function Instance({
 						}
 					</Box>
 				</Box>
-				{update ? (
+				{update &&
 					<Form
 						gridSizes={{ __default__: { xs:12 }}}
-						onCancel={() => updateSet(false)}
+						onCancel={() => {
+							updateSet(false);
+							updatesSet(undefined);
+						}}
+						onChange={updateChange}
 						onSubmit={updateSubmit}
 						tree={tree}
 						type="update"
 						value={record}
 					/>
-				) : (<>
-					<Grid container spacing={1}>
-						<Grid item xs={12} sm={4}>
-							<b>Path</b>
-						</Grid>
-						<Grid item xs={12} sm={8}>
-							{record.path}
-						</Grid>
-						{record.build && <>
-							<Grid item xs={12} sm={4}>
-								<b>Build path</b>
-							</Grid>
-							<Grid item xs={12} sm={8}>
-								{record.build}
-							</Grid>
-						</>}
-						<Grid item xs={12} sm={4}>
-							<b>Web root</b>
-						</Grid>
-						<Grid item xs={12} sm={8}>
-							{record.web_root}
-						</Grid>
-						{record.backups && <>
-							<Grid item xs={12} sm={4}>
-								<b>Backups path</b>
-							</Grid>
-							<Grid item xs={12} sm={8}>
-								{record.backups}
-							</Grid>
-						</>}
-						<Grid item xs={12} sm={4}>
-							<b>Git</b>
-						</Grid>
-						<Grid item xs={12} sm={8}>
-							{aGit.join(' && ')}
-						</Grid>
-						<Grid item xs={12} sm={4}>
-							<b>Node</b>
-						</Grid>
-						<Grid item xs={12} sm={8}>
-							{aNode.join(' && ')}
-						</Grid>
-					</Grid>
-					{rights.build.read &&
-						<Box className="actions">
-							{record.backups &&
-								<Button
-									color="primary"
-									onClick={() => backupsSet(true)}
-									variant="contained"
-								>Backups</Button>
-							}
+				}
+				<BuildCommands
+					instance={updates || record}
+					name={name}
+					style={preBox}
+				/>
+				{update === false && rights.build.read &&
+					<Box className="actions">
+						{record.backups &&
 							<Button
 								color="primary"
-								onClick={() => buildSet(true)}
+								onClick={() => backupsSet(true)}
 								variant="contained"
-							>Build</Button>
-						</Box>
-					}
-				</>)}
+							>Backups</Button>
+						}
+						<Button
+							color="primary"
+							onClick={() => buildSet(true)}
+							variant="contained"
+						>Build</Button>
+					</Box>
+				}
 			</Paper>
 		</Grid>
 		{backups &&
